@@ -11,8 +11,7 @@
     "Tecnativa, "
     "Fekete Mihai (Forest and Biomass Services Romania), "
     "Druidoo, "
-    "Odoo Community Association (OCA),"
-    "InitOS Gmbh",
+    "Odoo Community Association (OCA),",
     "summary": "Manage Public Holidays",
     "website": "https://github.com/OCA/hr-holidays",
     "depends": ["hr_holidays"],
