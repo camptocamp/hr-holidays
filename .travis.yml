@@ -52,3 +52,7 @@ branches:
 branches:
   except:
     - /^merge-branch-.*$/
+
+branches:
+  except:
+    - /^merge-branch-.*$/
