@@ -52,9 +52,9 @@ class ResourceCalendar(models.Model):
             )
             attendances = []
             country = resource_country.get(resource.id, self.env["res.country"])
-            holidays = holidays_by_country.get(country)
+            holidays = holidays_by_country.get(country, set())
             for attendance in interval_resource._items:
-                if holidays and attendance[0].date() not in holidays:
+                if attendance[0].date() not in holidays:
                     attendances.append(attendance)
             intervals[resource.id] = Intervals(attendances)
         return intervals
