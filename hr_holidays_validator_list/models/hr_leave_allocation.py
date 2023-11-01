@@ -11,8 +11,18 @@ class HolidaysAllocation(models.Model):
     """ Allocation Requests Access specifications: similar to leave requests """
     _inherit = "hr.leave.allocation"
 
-    def _get_responsible_for_approval(self):
-        print("Need to override it")
+    def activity_update(self):
+        for manager in self.employee_id.leave_manager_ids:
+            old_manager = self.employee_id.leave_manager_id
+            self.employee_id.leave_manager_id = manager
+            super().activity_update()
+            self.employee_id.leave_manager_id = old_manager
 
     def _check_approval_update(self, state):
-        print("Need to override it")
+        for manager in self.employee_id.leave_manager_ids:
+            if manager == self.env.user:
+                old_manager = self.employee_id.leave_manager_id
+                self.employee_id.leave_manager_id = manager
+                super()._check_approval_update(state)
+                self.employee_id.leave_manager_id = old_manager
+                break

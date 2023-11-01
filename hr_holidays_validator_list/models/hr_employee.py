@@ -18,9 +18,17 @@ class HrEmployeeBase(models.AbstractModel):
     )
 
     def create(self, values):
+        if ('leave_manager_ids' in values.keys()):
+            values['leave_manager_id'] = values['leave_manager_ids'][0][-1][-1]
         res = super().create(values)
         return res
 
     def write(self, values):
+        if ('leave_manager_ids' in values.keys()):
+            values['leave_manager_id'] = values['leave_manager_ids'][0][-1][-1]
         res = super().write(values)
+        approver_group = self.env.ref('hr_holidays.group_hr_holidays_responsible', raise_if_not_found=False)
+        for manager_id in values['leave_manager_ids'][0][-1]:
+            if approver_group:
+                approver_group.sudo().write({'users': [(4, manager_id)]})
         return res
