@@ -8,23 +8,29 @@ class HrLeave(models.Model):
     _inherit = "hr.leave"
 
     request_time_hour_from = fields.Float("Float hour from")
-
-    request_hour_from = fields.Char(compute="_compute_hour_from", store=True)
-
     request_time_hour_to = fields.Float("Float hour to")
 
-    request_hour_to = fields.Char(compute="_compute_hour_to", store=True)
+    request_hour_from_display = fields.Char(
+        compute="_compute_hour_from_display", store=True
+    )
+    request_hour_to_display = fields.Char(
+        compute="_compute_hour_to_display", store=True
+    )
 
     @api.depends("request_time_hour_from")
-    def _compute_hour_from(self):
+    def _compute_hour_from_display(self):
         for leave in self:
-            leave.request_hour_from = f"{leave.request_time_hour_from:.2f}"
+            leave.request_hour_from_display = (
+                f"{leave.request_time_hour_from:.2f}"
+                if leave.request_time_hour_from is not None
+                else ""
+            )
 
     @api.depends("request_time_hour_to")
-    def _compute_hour_to(self):
+    def _compute_hour_to_display(self):
         for leave in self:
-            leave.request_hour_to = f"{leave.request_time_hour_to:.2f}"
-
-    @api.depends("request_time_hour_from", "request_time_hour_to")
-    def _compute_date_from_to(self):
-        return super()._compute_date_from_to()
+            leave.request_hour_to_display = (
+                f"{leave.request_time_hour_to:.2f}"
+                if leave.request_time_hour_to is not None
+                else ""
+            )
