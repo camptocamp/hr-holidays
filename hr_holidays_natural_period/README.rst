@@ -1,7 +1,3 @@
-.. image:: https://odoo-community.org/readme-banner-image
-   :target: https://odoo-community.org/get-involved?utm_source=readme
-   :alt: Odoo Community Association
-
 =======================
 Holidays natural period
 =======================
@@ -17,7 +13,7 @@ Holidays natural period
 .. |badge1| image:: https://img.shields.io/badge/maturity-Beta-yellow.png
     :target: https://odoo-community.org/page/development-status
     :alt: Beta
-.. |badge2| image:: https://img.shields.io/badge/license-AGPL--3-blue.png
+.. |badge2| image:: https://img.shields.io/badge/licence-AGPL--3-blue.png
     :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
     :alt: License: AGPL-3
 .. |badge3| image:: https://img.shields.io/badge/github-OCA%2Fhr--holidays-lightgray.png?logo=github
@@ -32,8 +28,8 @@ Holidays natural period
 
 |badge1| |badge2| |badge3| |badge4| |badge5|
 
-This module was written to define natural day option in request unit on
-holidays type.
+This module was written to define natural day and natural day (Half Day)
+options in request unit on holidays type.
 
 **Table of contents**
 
@@ -48,8 +44,8 @@ For using natural period on leaves:
 1. Go to *Leaves > Dashboard*.
 2. Select dragging on the calendar the days you want to be on leave, or
    go to the form view for selecting start and end dates.
-3. Select the proper "Leave Type" that has "Natural day" selected in
-   "Request unit".
+3. Select the proper "Leave Type" that has "Natural day" or "Natural day
+   (Half Day)" selected in "Request unit".
 4. If no leave type is yet specified, then default configuration is to
    exclude public holidays.
 5. The number of days will be computed without employee calendar used.
@@ -75,19 +71,19 @@ Authors
 Contributors
 ------------
 
-- Tecnativa <https://www.tecnativa.com>
+-  Tecnativa <https://www.tecnativa.com>
 
-     - Víctor Martínez
-     - Pedro Baeza
-     - Carlos López
+      -  Víctor Martínez
+      -  Pedro Baeza
+      -  Carlos López
 
-- APSL-Nagarro <https://www.apsl.tech>
+-  APSL-Nagarro <https://www.apsl.tech>
 
-     - Antoni Marroig <amarroig@apsl.net>
+      -  Antoni Marroig <amarroig@apsl.net>
 
-- Grupo Isonor <https://www.grupoisonor.es>
+-  Grupo Isonor <https://www.grupoisonor.es>
 
-     - Alexandre D. Díaz
+      -  Alexandre D. Díaz
 
 Maintainers
 -----------
