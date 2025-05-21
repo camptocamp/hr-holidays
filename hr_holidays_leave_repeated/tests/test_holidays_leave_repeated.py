@@ -58,7 +58,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         cls.leave_1_list = cls.env["hr.leave"].create(
             {
                 "holiday_status_id": cls.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "workday",
                 "repeat_mode": "times",
                 "repeat_limit": 5,
@@ -70,7 +69,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         cls.leave_2_list = cls.env["hr.leave"].create(
             {
                 "holiday_status_id": cls.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "week",
                 "repeat_mode": "times",
                 "repeat_limit": 4,
@@ -82,7 +80,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         cls.leave_3_list = cls.env["hr.leave"].create(
             {
                 "holiday_status_id": cls.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "biweek",
                 "repeat_mode": "times",
                 "repeat_limit": 3,
@@ -94,7 +91,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         cls.leave_4_list = cls.env["hr.leave"].create(
             {
                 "holiday_status_id": cls.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "month",
                 "repeat_mode": "times",
                 "repeat_limit": 2,
@@ -187,9 +183,20 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
             self.env["hr.leave"].create(
                 {
                     "holiday_status_id": self.status_1.id,
-                    "holiday_type": "employee",
                     "repeat_every": "workday",
                     "repeat_limit": -1,
+                    "request_date_from": self.date_start,
+                    "request_date_to": self.date_end,
+                    "employee_id": self.employee_5.id,
+                }
+            )
+        with self.assertRaises(ValidationError):
+            self.env["hr.leave"].create(
+                {
+                    "holiday_status_id": self.status_1.id,
+                    "repeat_every": "workday",
+                    "repeat_mode": "date",
+                    "repeat_end_date": self.date_start - timedelta(days=1),
                     "request_date_from": self.date_start,
                     "request_date_to": self.date_end,
                     "employee_id": self.employee_5.id,
@@ -203,7 +210,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
             self.env["hr.leave"].create(
                 {
                     "holiday_status_id": self.status_1.id,
-                    "holiday_type": "employee",
                     "repeat_every": "workday",
                     "repeat_mode": "times",
                     "repeat_limit": 5,
@@ -219,7 +225,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         self.env["hr.leave"].create(
             {
                 "holiday_status_id": self.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "workday",
                 "repeat_mode": "times",
                 "repeat_limit": 5,
@@ -255,7 +260,6 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
         leaves = self.env["hr.leave"].create(
             {
                 "holiday_status_id": self.status_1.id,
-                "holiday_type": "employee",
                 "repeat_every": "week",
                 "repeat_mode": "date",
                 "repeat_end_date": old_date,
@@ -265,80 +269,3 @@ class TestHolidaysLeaveRepeated(common.TransactionCase):
             }
         )
         self.assertEqual(len(leaves), 5)
-
-    def test_10_check_different_resource_calendar(self):
-        with self.assertRaises(ValidationError):
-            calendar2 = self.env["resource.calendar"].create({"name": "Calendar 2"})
-            employee_a = self.env["hr.employee"].create(
-                {"name": "Employee 8", "resource_calendar_id": self.calendar.id}
-            )
-            employee_b = self.env["hr.employee"].create(
-                {
-                    "name": "Employee 9 - different calendar",
-                    "resource_calendar_id": calendar2.id,
-                }
-            )
-            self.env["hr.leave"].create(
-                {
-                    "holiday_status_id": self.status_1.id,
-                    "holiday_type": "employee",
-                    "repeat_every": "workday",
-                    "repeat_mode": "times",
-                    "repeat_limit": 5,
-                    "request_date_from": self.date_start,
-                    "request_date_to": self.date_end,
-                    "multi_employee": True,
-                    "employee_ids": [(6, False, [employee_a.id, employee_b.id])],
-                }
-            )
-
-    def test_11_check_no_resource_calendar(self):
-        with self.assertRaises(ValidationError):
-            employee = self.env["hr.employee"].create(
-                {
-                    "name": "Employee 10 - no calendar",
-                    "resource_calendar_id": False,
-                }
-            )
-            self.env["hr.leave"].create(
-                {
-                    "holiday_status_id": self.status_1.id,
-                    "holiday_type": "employee",
-                    "repeat_every": "workday",
-                    "repeat_mode": "times",
-                    "repeat_limit": 5,
-                    "request_date_from": self.date_start,
-                    "request_date_to": self.date_end,
-                    "multi_employee": True,
-                    "employee_id": employee.id,
-                }
-            )
-
-    def test_12_count_repetitions_multi_employees(self):
-        employee_a = self.env["hr.employee"].create(
-            {"name": "Employee 6", "resource_calendar_id": self.calendar.id}
-        )
-        employee_b = self.env["hr.employee"].create(
-            {"name": "Employee 7", "resource_calendar_id": self.calendar.id}
-        )
-        status = self.env["hr.leave.type"].create(
-            {
-                "name": "Repeating Status - No Allocation",
-                "repeat": True,
-                "requires_allocation": "no",
-            }
-        )
-        leave_list = self.env["hr.leave"].create(
-            {
-                "holiday_status_id": status.id,
-                "holiday_type": "employee",
-                "repeat_every": "workday",
-                "repeat_mode": "times",
-                "repeat_limit": 5,
-                "request_date_from": self.date_start,
-                "request_date_to": self.date_end,
-                "multi_employee": True,
-                "employee_ids": [(6, False, [employee_a.id, employee_b.id])],
-            }
-        )
-        self.assertEqual(len(leave_list), 5)
