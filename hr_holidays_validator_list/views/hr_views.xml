@@ -14,7 +14,6 @@
         </field>
     </record>
 
-
     <record id="view_employee_leave_tree_inherit" model="ir.ui.view">
         <field name="name">hr.employee.tree.leave</field>
         <field name="model">hr.employee</field>
@@ -26,8 +25,6 @@
             <xpath expr="//field[@name='leave_manager_id']" position="after">
                 <field name="leave_manager_ids" widget="many2many_tags" />
             </xpath>
-
         </field>
     </record>
-
 </odoo>

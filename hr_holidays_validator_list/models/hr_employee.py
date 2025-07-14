@@ -19,7 +19,6 @@ class HrEmployeeBase(models.AbstractModel):
 
     @api.depends("parent_id", "leave_manager_ids")
     def _compute_leave_manager(self):
-
         for employee in self:
             if employee.leave_manager_ids:
                 employee.leave_manager_id = employee.leave_manager_ids[0]
