@@ -9,27 +9,13 @@ class HolidaysLeave(models.Model):
 
     _inherit = "hr.leave"
 
-    def activity_update(self):
-        """Updates activity for all leave_manager_ids"""
-        if not self.employee_id.leave_manager_ids or self.env.context.get(
-            "no_leave_manager_ids_trigger"
-        ):
-            super().activity_update()
-        else:
-            for manager in self.employee_id.leave_manager_ids:
-                self.employee_id.sudo().leave_manager_id = manager
-                super().activity_update()
-                self.employee_id.sudo().leave_manager_id = False
+    def _get_responsible_for_approval(self):
+        self.ensure_one()
 
-    def _check_approval_update(self, state):
-        """Checks that the leave manager is in leave_manager_ids"""
-        if not self.employee_id.leave_manager_ids or self.env.context.get(
-            "no_leave_manager_ids_trigger"
+        if self.validation_type == "manager" or (
+            self.validation_type == "both" and self.state == "confirm"
         ):
-            super()._check_approval_update(state)
-        else:
-            for manager in self.employee_id.leave_manager_ids:
-                if manager == self.env.user:
-                    self.employee_id.sudo().leave_manager_id = manager.id
-                    super()._check_approval_update(state)
-                    self.employee_id.sudo().leave_manager_id = False
+            if self.employee_id.leave_manager_ids:
+                return self.employee_id.leave_manager_ids
+
+        return super()._get_responsible_for_approval()

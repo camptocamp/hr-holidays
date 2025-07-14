@@ -19,27 +19,30 @@ class HrEmployeeBase(models.AbstractModel):
 
     @api.depends("parent_id", "leave_manager_ids")
     def _compute_leave_manager(self):
-        for employee in self:
-            if employee.leave_manager_ids:
-                employee.leave_manager_id = employee.leave_manager_ids[0]
-            else:
-                super()._compute_leave_manager()
+        employees = self.filtered(lambda e: e.leave_manager_ids)
+        for employee in employees:
+            employee.leave_manager_id = employee.leave_manager_ids[0]
+        remaining_employees = self - employees
+        return super(HrEmployeeBase, remaining_employees)._compute_leave_manager()
 
-    def _add_leave_manager_ids_in_group(self, values):
-        if "leave_manager_ids" in values:
-            approver_group = self.env.ref(
-                "hr_holidays.group_hr_holidays_responsible", raise_if_not_found=False
-            )
-            for manager_id in values["leave_manager_ids"][0][-1]:
-                if approver_group:
-                    approver_group.sudo().write({"users": [(4, manager_id)]})
+    def _add_leave_manager_ids_in_group(self):
+        approver_group = self.env.ref(
+            "hr_holidays.group_hr_holidays_responsible", raise_if_not_found=False
+        )
+        if not approver_group:
+            return
+        managers = self.mapped("leave_manager_ids")
+        if managers:
+            approver_group.users |= managers
 
-    def create(self, values):
-        res = super().create(values)
-        self._add_leave_manager_ids_in_group(values)
+    @api.model_create_multi
+    def create(self, vals_list):
+        res = super().create(vals_list)
+        self._add_leave_manager_ids_in_group()
         return res
 
     def write(self, values):
         res = super().write(values)
-        self._add_leave_manager_ids_in_group(values)
+        if values.get("leave_manager_ids"):
+            self._add_leave_manager_ids_in_group()
         return res
