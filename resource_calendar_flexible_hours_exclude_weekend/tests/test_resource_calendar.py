@@ -30,6 +30,7 @@ class TestResourceCalendar(TransactionCase):
             }
         )
         cls.UTC = pytz.timezone("UTC")
+        cls.tz_FR = pytz.timezone("Europe/Paris")
 
     def _check(self, calendar, start_dt, end_dt, expected_duration, message):
         result_per_resource_id = calendar._attendance_intervals_batch(start_dt, end_dt)
@@ -41,7 +42,7 @@ class TestResourceCalendar(TransactionCase):
         self.assertEqual(
             actual_duration / 3600,
             expected_duration,
-            "for 7d starting on saturday: you get a full week duration",
+            message,
         )
 
     def test_flexible_calendar_without_weekend_starting_sat(self):
@@ -149,4 +150,103 @@ class TestResourceCalendar(TransactionCase):
             end_dt,
             6 * 8,
             "for 10d starting on Fri: you get 6d",
+        )
+
+    def test_flexible_calendar_non_utc_1d(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # start on Mon 00:00
+        start_dt = datetime(2025, 11, 3, 0, 0, 0, tzinfo=self.tz_FR)
+        # end on Tue 00:00
+        end_dt = datetime(2025, 11, 4, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            1 * 8,
+            "for 1d starting on Mon: you get 1d",
+        )
+
+    def test_flexible_calendar_non_utc_10d_starting_fri(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # start on Fri 00:00
+        start_dt = datetime(2025, 11, 7, 0, 0, 0, tzinfo=self.tz_FR)
+        # end on Mon 00:00
+        end_dt = datetime(2025, 11, 17, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            6 * 8,
+            "for 10d starting on Fri: you get 6d",
+        )
+
+    def test_hr_holidays_use(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        start_dt = datetime(2026, 3, 19, 0, 0, 0, tzinfo=self.UTC)
+        # end on Mon 00:00
+        end_dt = datetime(2026, 4, 30, 23, 59, 59, tzinfo=self.UTC)
+        result_per_resource_id = calendar._attendance_intervals_batch(start_dt, end_dt)
+        for _resource, intervals in result_per_resource_id.items():
+            for start, end, meta in intervals:
+                self.assertEqual(
+                    len(meta), 1, f"more than one attendance for {start}->{end}: {meta}"
+                )
+
+    def test_daylight_saving_time_1(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # week end of winter -> summer time
+        start_dt = datetime(2026, 3, 28, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            0 * 8,
+            "for 2d during the CET -> CEST week end, you get 0d",
+        )
+
+    def test_daylight_saving_time_2(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # week end of winter -> summer time
+        start_dt = datetime(2026, 3, 27, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            1 * 8,
+            "for 3d during the CET -> CEST week end, starging on Fri, you get 1d",
+        )
+
+    def test_daylight_saving_time_3(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # week end of winter -> summer time
+        start_dt = datetime(2026, 3, 23, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            5 * 8,
+            "for 1w including the CET -> CEST week end, starting on Mon, you get 5d",
+        )
+
+    def test_daylight_saving_time_4(self):
+        calendar = self.calendar_flex_without_weekend
+        calendar.tz = self.tz_FR.zone
+        # week end of winter -> summer time, Fri -> Mon
+        start_dt = datetime(2026, 3, 27, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2026, 3, 31, 0, 0, 0, tzinfo=self.tz_FR)
+        self._check(
+            calendar,
+            start_dt,
+            end_dt,
+            2 * 8,
+            "for 4d including the CET -> CEST week end, Fri to Mon, you get 2d",
         )
