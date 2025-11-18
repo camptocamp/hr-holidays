@@ -74,7 +74,7 @@ class ResourceCalendar(models.Model):
                 if weekday in (5, 6):  # Saturday or Sunday
                     # Move to next Monday, midnight in the considered TZ
                     days_to_monday = 7 - weekday
-                    skipping_start_dt += timedelta(days=days_to_monday)
+                    skipping_start_dt += timedelta(days=days_to_monday, hours=1)
                     skipping_start_dt -= timedelta(
                         hours=skipping_start_dt.hour,
                         minutes=skipping_start_dt.minute,
@@ -88,7 +88,7 @@ class ResourceCalendar(models.Model):
                 while skipping_start_dt < end_dt:
                     # find the end of the current week or the end of the period
                     skipping_end_dt = skipping_start_dt + timedelta(
-                        days=7 - skipping_start_dt.weekday()
+                        days=7 - skipping_start_dt.weekday(), hours=1
                     )
                     skipping_end_dt -= timedelta(
                         hours=skipping_end_dt.hour,
