@@ -92,7 +92,7 @@ class ResourceCalendar(models.Model):
                 # 1 call if the first day is a monday, and a second if we need to
                 # check the following week, but this does not work when there are
                 # holidays in the period
-                while skipping_start_dt < end_dt:
+                while skipping_start_dt <= end_dt:
                     # find the end of the current week or the end of the period
                     skipping_end_dt = (
                         skipping_start_dt
@@ -117,8 +117,11 @@ class ResourceCalendar(models.Model):
                         for start, end, attendance in work_intervals:
                             if start.weekday() not in (5, 6):
                                 new_intervals[(start, end)] = (start, end, attendance)
-                    # go to next monday
-                    skipping_start_dt = skipping_end_dt
+                    if skipping_end_dt == end_dt:
+                        break
+                    else:
+                        # go to next monday
+                        skipping_start_dt = skipping_end_dt
             # merge both result set
             for resource, intervals in skipping_res.items():
                 res_others[resource] = WorkIntervals(intervals.values())
