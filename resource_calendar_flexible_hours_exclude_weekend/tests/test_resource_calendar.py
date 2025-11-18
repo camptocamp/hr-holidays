@@ -156,9 +156,11 @@ class TestResourceCalendar(TransactionCase):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # start on Mon 00:00
-        start_dt = datetime(2025, 11, 3, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(2025, 11, 2, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
         # end on Tue 00:00
-        end_dt = datetime(2025, 11, 4, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2025, 11, 3, 23, 0, 0, tzinfo=self.UTC).astimezone(self.tz_FR)
         self._check(
             calendar,
             start_dt,
@@ -171,9 +173,13 @@ class TestResourceCalendar(TransactionCase):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # start on Fri 00:00
-        start_dt = datetime(2025, 11, 7, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(2025, 11, 6, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
         # end on Mon 00:00
-        end_dt = datetime(2025, 11, 17, 0, 0, 0, tzinfo=self.tz_FR)
+        end_dt = datetime(2025, 11, 16, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
         self._check(
             calendar,
             start_dt,
@@ -199,8 +205,22 @@ class TestResourceCalendar(TransactionCase):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # week end of winter -> summer time
-        start_dt = datetime(2026, 3, 28, 0, 0, 0, tzinfo=self.tz_FR)
-        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(
+            2026,
+            3,
+            27,
+            23,
+            0,
+            0,
+        ).astimezone(self.tz_FR)
+        end_dt = datetime(
+            2026,
+            3,
+            29,
+            22,
+            0,
+            0,
+        ).astimezone(self.tz_FR)
         self._check(
             calendar,
             start_dt,
@@ -213,22 +233,26 @@ class TestResourceCalendar(TransactionCase):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # week end of winter -> summer time
-        start_dt = datetime(2026, 3, 27, 0, 0, 0, tzinfo=self.tz_FR)
-        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(2026, 3, 26, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
+        end_dt = datetime(2026, 3, 29, 22, 0, 0, tzinfo=self.UTC).astimezone(self.tz_FR)
         self._check(
             calendar,
             start_dt,
             end_dt,
             1 * 8,
-            "for 3d during the CET -> CEST week end, starging on Fri, you get 1d",
+            "for 3d during the CET -> CEST week end, starting on Fri, you get 1d",
         )
 
     def test_daylight_saving_time_3(self):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # week end of winter -> summer time
-        start_dt = datetime(2026, 3, 23, 0, 0, 0, tzinfo=self.tz_FR)
-        end_dt = datetime(2026, 3, 30, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(2026, 3, 22, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
+        end_dt = datetime(2026, 3, 29, 22, 0, 0, tzinfo=self.UTC).astimezone(self.tz_FR)
         self._check(
             calendar,
             start_dt,
@@ -241,8 +265,10 @@ class TestResourceCalendar(TransactionCase):
         calendar = self.calendar_flex_without_weekend
         calendar.tz = self.tz_FR.zone
         # week end of winter -> summer time, Fri -> Mon
-        start_dt = datetime(2026, 3, 27, 0, 0, 0, tzinfo=self.tz_FR)
-        end_dt = datetime(2026, 3, 31, 0, 0, 0, tzinfo=self.tz_FR)
+        start_dt = datetime(2026, 3, 26, 23, 0, 0, tzinfo=self.UTC).astimezone(
+            self.tz_FR
+        )
+        end_dt = datetime(2026, 3, 30, 22, 0, 0, tzinfo=self.UTC).astimezone(self.tz_FR)
         self._check(
             calendar,
             start_dt,

@@ -75,21 +75,29 @@ class ResourceCalendar(models.Model):
                     # Move to next Monday, midnight in the considered TZ
                     days_to_monday = 7 - weekday
                     skipping_start_dt += timedelta(days=days_to_monday, hours=1)
+                    # reconvert to get Daylight saving time applied if needed
+                    skipping_start_dt = skipping_start_dt.astimezone(tz)
                     skipping_start_dt -= timedelta(
                         hours=skipping_start_dt.hour,
                         minutes=skipping_start_dt.minute,
                         seconds=skipping_start_dt.second,
                     )
+                    # check if we moved past the end date, in which case we want to move
+                    # it to ensure we enter the while loop below
+                    if end_dt < skipping_start_dt:
+                        end_dt = skipping_start_dt
 
                 # for resources which should skip weekend we have to iterate by week
-                # XXX Maybe we can be smarter and only do 1 or 2 calls:
+                # I thought that maybe we can be smarter and only do 1 or 2 calls:
                 # 1 call if the first day is a monday, and a second if we need to
-                # check the following week.
+                # check the following week, but this does not work when there are
+                # holidays in the period
                 while skipping_start_dt < end_dt:
                     # find the end of the current week or the end of the period
-                    skipping_end_dt = skipping_start_dt + timedelta(
-                        days=7 - skipping_start_dt.weekday(), hours=1
-                    )
+                    skipping_end_dt = (
+                        skipping_start_dt
+                        + timedelta(days=7 - skipping_start_dt.weekday(), hours=1)
+                    ).astimezone(tz)
                     skipping_end_dt -= timedelta(
                         hours=skipping_end_dt.hour,
                         minutes=skipping_end_dt.minute,
