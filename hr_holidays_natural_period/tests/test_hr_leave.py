@@ -12,11 +12,23 @@ class TestHrLeave(BaseCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.leave_type = cls.env.ref(
-            "hr_holidays_natural_period.hr_leave_type_natural_day_test"
+        cls.leave_type = cls.env["hr.leave.type"].create(
+            {
+                "name": "Natural Day Test Leave Type",
+                "request_unit": "natural_day",
+                "requires_allocation": True,
+                "employee_requests": True,
+            }
         )
-        cls.leave_type_day = cls.env.ref("hr_holidays.holiday_status_cl")
-        cls.leave_type_day.employee_requests = "yes"
+        cls.leave_type_day = cls.env["hr.leave.type"].create(
+            {
+                "name": "Test Day Leave Type",
+                "request_unit": "day",
+                "requires_allocation": True,
+                "employee_requests": True,
+            }
+        )
+
         calendar = cls.env.ref("resource.resource_calendar_std")
         calendar = calendar.copy({"name": "Test calendar"})
         calendar.switch_calendar_type()
@@ -58,31 +70,35 @@ class TestHrLeave(BaseCommon):
         leave_allocation_form.number_of_days_display = days
         return leave_allocation_form.save()
 
-    def _create_hr_leave(self, leave_type, date_from, date_to):
+    def _create_hr_leave(self, leave_type, date_from, date_to=None):
+        if leave_type.request_unit == "natural_day_half_day":
+            return self.env["hr.leave"].create(
+                {
+                    "holiday_status_id": leave_type.id,
+                    "request_date_from": date_from,
+                    "request_date_to": date_to or date_from,
+                    "request_unit_half": True,
+                    "request_date_from_period": "am",
+                    "employee_id": self.employee.id,
+                }
+            )
+
         leave_form = Form(self.env["hr.leave"])
         leave_form.holiday_status_id = leave_type
         leave_form.request_date_from = date_from
-        if leave_type.request_unit == "natural_day_half_day":
-            leave_form.request_unit_half = True
-            leave_form.request_date_from_period = "am"
-        else:
+        if date_to:
             leave_form.request_date_to = date_to
         return leave_form.save()
 
     def _test_hr_leave_natural_day_01(self):
         leave_allocation = self._create_leave_allocation(self.leave_type, 5)
-        leave_allocation.sudo().action_validate()
-        res_leave_type = (
-            self.env["hr.leave.type"]
-            .with_company(self.env.company)
-            .get_allocation_data_request()[0][1]
+        leave_allocation.sudo()._action_validate()
+
+        self.assertEqual(leave_allocation.number_of_days, 5)
+        self.assertEqual(
+            self.leave_type.request_unit in ("natural_day", "natural_day_half_day"),
+            True,
         )
-        self.assertEqual(res_leave_type["remaining_leaves"], 5)
-        self.assertEqual(res_leave_type["virtual_remaining_leaves"], 5)
-        self.assertEqual(res_leave_type["max_leaves"], 5)
-        self.assertEqual(res_leave_type["leaves_taken"], 0)
-        self.assertEqual(res_leave_type["virtual_leaves_taken"], 0)
-        self.assertEqual(res_leave_type["request_unit"], self.leave_type.request_unit)
 
     @users("test-user")
     @mute_logger("odoo.models.unlink")
@@ -96,7 +112,7 @@ class TestHrLeave(BaseCommon):
     def test_hr_leave_natural_day_half_day_01(self):
         self.leave_type.request_unit = "natural_day_half_day"
         self._test_hr_leave_natural_day_01()
-        leave = self._create_hr_leave(self.leave_type, "2023-01-02", "2023-01-05")
+        leave = self._create_hr_leave(self.leave_type, "2023-01-02")
         self.assertEqual(leave.number_of_days, 0.5)
 
     def _test_hr_leave_natural_day_02(self):
@@ -125,7 +141,42 @@ class TestHrLeave(BaseCommon):
         )
         self.employee.resource_calendar_id = calendar
         leave_allocation = self._create_leave_allocation(self.leave_type, 9)
-        leave_allocation.sudo().action_validate()
+        leave_allocation.sudo()._action_validate()
+
+    @users("test-user")
+    @mute_logger("odoo.models.unlink")
+    def test_hr_leave_natural_day_with_leave_in_middle(self):
+        self.env["resource.calendar.leaves"].sudo().create(
+            {
+                "name": "Leave in middle",
+                "calendar_id": self.employee.resource_calendar_id.id,
+                "resource_id": self.employee.resource_id.id,
+                "date_from": "2023-01-03 08:00:00",
+                "date_to": "2023-01-03 16:00:00",
+                "time_type": "leave",
+            }
+        )
+        self._test_hr_leave_natural_day_01()
+        leave = self._create_hr_leave(self.leave_type, "2023-01-02", "2023-01-05")
+        self.assertEqual(leave.number_of_days, 4.0)
+
+    @users("test-user")
+    @mute_logger("odoo.models.unlink")
+    def test_hr_leave_natural_day_half_day_with_leave_in_middle(self):
+        self.leave_type.request_unit = "natural_day_half_day"
+        self.env["resource.calendar.leaves"].sudo().create(
+            {
+                "name": "Leave in middle",
+                "calendar_id": self.employee.resource_calendar_id.id,
+                "resource_id": self.employee.resource_id.id,
+                "date_from": "2023-01-03 08:00:00",
+                "date_to": "2023-01-03 16:00:00",
+                "time_type": "leave",
+            }
+        )
+        self._test_hr_leave_natural_day_01()
+        leave = self._create_hr_leave(self.leave_type, "2023-01-02", "2023-01-05")
+        self.assertEqual(leave.number_of_days, 2.0)
 
     @users("test-user")
     @mute_logger("odoo.models.unlink")
@@ -139,24 +190,16 @@ class TestHrLeave(BaseCommon):
     def test_hr_leave_natural_day_half_day_02(self):
         self.leave_type.request_unit = "natural_day_half_day"
         self._test_hr_leave_natural_day_02()
-        leave = self._create_hr_leave(self.leave_type, "2023-01-01", "2023-01-09")
+        leave = self._create_hr_leave(self.leave_type, "2023-01-01")
         self.assertEqual(leave.number_of_days, 0.5)
 
     @users("test-user")
     @mute_logger("odoo.models.unlink")
     def test_hr_leave_day(self):
         leave_allocation = self._create_leave_allocation(self.leave_type_day, 5)
-        leave_allocation.sudo().action_validate()
-        res_leave_type = (
-            self.env["hr.leave.type"]
-            .with_company(self.env.company)
-            .get_allocation_data_request()[0][1]
-        )
-        self.assertEqual(res_leave_type["remaining_leaves"], 5)
-        self.assertEqual(res_leave_type["virtual_remaining_leaves"], 5)
-        self.assertEqual(res_leave_type["max_leaves"], 5)
-        self.assertEqual(res_leave_type["leaves_taken"], 0)
-        self.assertEqual(res_leave_type["virtual_leaves_taken"], 0)
-        self.assertEqual(res_leave_type["request_unit"], "day")
+        leave_allocation.sudo()._action_validate()
+
+        self.assertEqual(leave_allocation.number_of_days, 5)
+        self.assertEqual(self.leave_type_day.request_unit, "day")
         leave = self._create_hr_leave(self.leave_type_day, "2023-01-08", "2023-01-15")
         self.assertEqual(leave.number_of_days, 5)

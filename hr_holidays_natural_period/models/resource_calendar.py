@@ -10,8 +10,7 @@ from pytz import timezone
 
 from odoo import models
 from odoo.tools.float_utils import float_round
-
-from odoo.addons.resource.models.utils import Intervals
+from odoo.tools.intervals import Intervals
 
 
 class ResourceCalendar(models.Model):
@@ -40,11 +39,21 @@ class ResourceCalendar(models.Model):
                 interval_days = interval_hours / 24  # hours on a day
             day_hours[start.date()] += interval_hours
             day_days[start.date()] += interval_days
-
+        # Round each calendar day to the nearest natural period unit before summing.
+        # When compute_leaves=True, existing work-schedule leaves are subtracted from
+        # the 24h natural-day intervals, producing fractions (e.g. 15h/24h = 0.625).
+        # Since natural period counts whole calendar days, any remaining portion ≥ 0.5
+        # of a unit must round up to a full unit, and days fully absorbed by a public
+        # holiday (0 remaining) stay at 0.
+        old_request_unit = self.env.context.get("old_request_unit", "natural_day")
+        unit = 0.5 if old_request_unit in ("natural_day_half_day", "half_day") else 1.0
         return {
-            # Round the number of days to the closest 16th of a day.
             "days": float_round(
-                sum(day_days[day] for day in day_days), precision_rounding=0.001
+                sum(
+                    float_round(day_days[day], precision_rounding=unit)
+                    for day in day_days
+                ),
+                precision_rounding=0.001,
             ),
             "hours": sum(day_hours.values()),
         }
@@ -58,29 +67,26 @@ class ResourceCalendar(models.Model):
     def _natural_period_intervals_batch(self, start_dt, end_dt, intervals, resources):
         # Re-define start_dt and end_dt to ensure that we always iterate through the
         # last day.
-        start_dt = datetime.combine(start_dt.date(), time.min)
-        end_time = (
-            time.max
-            if self.env.context.get("old_request_unit") == "natural_day"
-            else time(12, 0, 0)
-        )
-        end_dt = datetime.combine(end_dt.date(), end_time)
+        start_date = start_dt.date()
+        end_date = end_dt.date()
+        old_request_unit = self.env.context.get("old_request_unit")
+        # Fix: if old_request_unit == 'day' and self.env.context.get('natural_period'):
+        # old_request_unit = 'natural_day'
+        if old_request_unit == "day" and self.env.context.get("natural_period"):
+            old_request_unit = "natural_day"
+        end_time = time.max if old_request_unit == "natural_day" else time(12, 0, 0)
         for resource in resources or []:
-            interval_resource = intervals[resource.id]
             tz = timezone(resource.tz)
             attendances = []
-            if len(interval_resource._items) > 0:
-                attendances = interval_resource._items
-            for day in rrule.rrule(rrule.DAILY, dtstart=start_dt, until=end_dt):
-                exist_interval = self._exist_interval_in_date(attendances, day.date())
-                if not exist_interval:
-                    attendances.append(
-                        (
-                            datetime.combine(day.date(), time.min).replace(tzinfo=tz),
-                            datetime.combine(day.date(), end_time).replace(tzinfo=tz),
-                            self.env["resource.calendar.attendance"],
-                        )
+            # For natural days, create intervals for ALL days
+            for day in rrule.rrule(rrule.DAILY, dtstart=start_date, until=end_date):
+                attendances.append(
+                    (
+                        datetime.combine(day.date(), time.min).replace(tzinfo=tz),
+                        datetime.combine(day.date(), end_time).replace(tzinfo=tz),
+                        self.env["resource.calendar.attendance"],
                     )
+                )
             intervals[resource.id] = Intervals(attendances)
         return intervals
 
