@@ -1,6 +1,7 @@
 # Copyright 2026 Solvos Consultoría Informática, S.L. (<https://www.solvos.es>)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+
 from odoo.tests.common import TransactionCase, tagged
 
 
@@ -40,23 +41,20 @@ class TestLeaveReportCalendar(TransactionCase):
         self.assertIn(
             "holiday_status_id",
             self.env["hr.leave.report.calendar"]._fields,
-            "holiday_status_id field dont exists.",
+            "The 'holiday_status_id' field is not found in the Odoo model.",
         )
 
-    def test_sql_view_column_exists(self):
-        self.env.cr.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'hr_leave_report_calendar';
-        """
-        )
-        result = self.env.cr.fetchall()
+    def test_field_assigned_properly(self):
+        calendar_record = self.env["hr.leave.report.calendar"].browse(self.leave.id)
 
-        column_names = [row[0] for row in result]
-
-        self.assertIn(
-            "holiday_status_id",
-            column_names,
-            "The init() method failed or did not add the holiday_status_id column.",
+        self.assertEqual(
+            calendar_record.holiday_status_id,
+            self.leave.holiday_status_id,
+            "The holiday_status_id is not properly assigned in the calendar report.",
         )
+
+    def test_search_holiday_status_id(self):
+        calendars = self.env["hr.leave.report.calendar"].search(
+            [("holiday_status_id", "=", self.leave_type.id)]
+        )
+        self.assertIn(self.leave.id, calendars.ids)
