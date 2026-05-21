@@ -21,6 +21,7 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
+[hr_holidays_leave_report_calendar_type](hr_holidays_leave_report_calendar_type/) | 19.0.1.0.0 |  | Adds leave type filter to Time Off Overview calendar
 [hr_holidays_public](hr_holidays_public/) | 19.0.1.0.0 |  | Manage Public Holidays
 
 [//]: # (end addons)

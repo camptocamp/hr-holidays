@@ -1,7 +1,8 @@
 [project]
 name = "odoo-addons-oca-hr-holidays"
-version = "19.0.20260313.0"
+version = "19.0.20260521.0"
 dependencies = [
+    "odoo-addon-hr_holidays_leave_report_calendar_type==19.0.*",
     "odoo-addon-hr_holidays_public==19.0.*",
 ]
 classifiers=[
