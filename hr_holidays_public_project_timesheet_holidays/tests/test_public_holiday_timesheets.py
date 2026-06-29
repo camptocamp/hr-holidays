@@ -7,6 +7,7 @@ from freezegun import freeze_time
 
 from odoo import fields
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 from odoo.tests import common
 
 from odoo.addons.hr_holidays_public_project_timesheet_holidays.hooks import (
@@ -160,7 +161,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         holiday_date = date(2026, 7, 6)
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         timesheets = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)]
+            Domain("public_holiday_line_id", "=", line.id)
         )
 
         self.assertIn(self.emp_a, timesheets.employee_id)
@@ -176,7 +177,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         holiday_date = date(2026, 7, 27)
         line = self._create_public_holiday_line(holiday_date, country=False)
         timesheets = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)]
+            Domain("public_holiday_line_id", "=", line.id)
         )
 
         self.assertIn(self.emp_a, timesheets.employee_id)
@@ -195,7 +196,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
             state_ids=self.state_a,
         )
         timesheets = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)]
+            Domain("public_holiday_line_id", "=", line.id)
         )
 
         self.assertIn(self.emp_flex, timesheets.employee_id)
@@ -209,7 +210,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [("public_holiday_line_id", "=", line.id)]
+                Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -219,10 +220,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -232,7 +231,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         before_ids = set(
             self.env["account.analytic.line"]
-            .search([("public_holiday_line_id", "=", line.id)])
+            .search(Domain("public_holiday_line_id", "=", line.id))
             .ids
         )
 
@@ -240,7 +239,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
 
         after_ids = set(
             self.env["account.analytic.line"]
-            .search([("public_holiday_line_id", "=", line.id)])
+            .search(Domain("public_holiday_line_id", "=", line.id))
             .ids
         )
         self.assertEqual(before_ids, after_ids)
@@ -251,13 +250,13 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         """
         line = self._create_public_holiday_line(date(2026, 7, 8), self.country_a)
         old_timesheets = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)]
+            Domain("public_holiday_line_id", "=", line.id)
         )
         self.assertTrue(old_timesheets)
 
         line.write({"date": date(2026, 7, 9)})
         new_timesheets = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)]
+            Domain("public_holiday_line_id", "=", line.id)
         )
 
         self.assertTrue(new_timesheets)
@@ -270,14 +269,14 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(date(2026, 7, 24), self.country_a)
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [("public_holiday_line_id", "=", line.id)]
+                Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
         line.write({"date": date(2026, 6, 1)})
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [("public_holiday_line_id", "=", line.id)]
+                Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -290,29 +289,23 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
 
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line_a.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line_a.id)
             )
         )
         self.emp_a.write({"address_id": self.partner_b.id})
 
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line_a.id),
-                    ("date", ">=", fields.Date.today()),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line_a.id)
+                & Domain("date", ">=", fields.Date.today())
             )
         )
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line_b.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line_b.id)
             )
         )
 
@@ -341,10 +334,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -352,10 +343,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
 
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -384,10 +373,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -395,10 +382,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
 
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -409,10 +394,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         holiday_date = date(2026, 7, 29)
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         timesheet = self.env["account.analytic.line"].search(
-            [
-                ("employee_id", "=", self.emp_a.id),
-                ("public_holiday_line_id", "=", line.id),
-            ],
+            Domain("employee_id", "=", self.emp_a.id)
+            & Domain("public_holiday_line_id", "=", line.id),
             limit=1,
         )
         self.assertEqual(timesheet.unit_amount, 8.0)
@@ -425,10 +408,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         holiday_date = date(2026, 7, 27)
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         timesheet = self.env["account.analytic.line"].search(
-            [
-                ("employee_id", "=", self.emp_part.id),
-                ("public_holiday_line_id", "=", line.id),
-            ],
+            Domain("employee_id", "=", self.emp_part.id)
+            & Domain("public_holiday_line_id", "=", line.id),
             limit=1,
         )
         self.assertEqual(timesheet.unit_amount, 4.0)
@@ -442,10 +423,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
             state_ids=self.state_a,
         )
         timesheet = self.env["account.analytic.line"].search(
-            [
-                ("employee_id", "=", self.emp_flex.id),
-                ("public_holiday_line_id", "=", line.id),
-            ],
+            Domain("employee_id", "=", self.emp_flex.id)
+            & Domain("public_holiday_line_id", "=", line.id),
             limit=1,
         )
         self.assertEqual(timesheet.unit_amount, self.flex_calendar.hours_per_day)
@@ -458,10 +437,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(date(2026, 7, 12), self.country_a)
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -471,7 +448,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         """
         line = self._create_public_holiday_line(date(2026, 7, 15), self.country_a)
         timesheet = self.env["account.analytic.line"].search(
-            [("public_holiday_line_id", "=", line.id)],
+            Domain("public_holiday_line_id", "=", line.id),
             limit=1,
         )
 
@@ -495,10 +472,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(holiday_date, self.country_a)
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -544,18 +519,14 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         )
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", employee.id),
-                    ("public_holiday_line_id", "=", line_a.id),
-                ]
+                Domain("employee_id", "=", employee.id)
+                & Domain("public_holiday_line_id", "=", line_a.id)
             )
         )
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", employee.id),
-                    ("public_holiday_line_id", "=", line_b.id),
-                ]
+                Domain("employee_id", "=", employee.id)
+                & Domain("public_holiday_line_id", "=", line_b.id)
             )
         )
 
@@ -581,10 +552,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         )
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", employee.id),
-                    ("public_holiday_line_id", "!=", False),
-                ]
+                Domain("employee_id", "=", employee.id)
+                & Domain("public_holiday_line_id", "!=", False)
             )
         )
 
@@ -594,31 +563,25 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         line = self._create_public_holiday_line(date(2026, 7, 27), self.country_a)
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_part.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_part.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
         self.emp_part.active = False
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_part.id),
-                    ("public_holiday_line_id", "=", line.id),
-                    ("date", ">=", fields.Date.today()),
-                ]
+                Domain("employee_id", "=", self.emp_part.id)
+                & Domain("public_holiday_line_id", "=", line.id)
+                & Domain("date", ">=", fields.Date.today())
             )
         )
 
         self.emp_part.active = True
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_part.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_part.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -628,17 +591,13 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         """
         line = self._create_public_holiday_line(date(2026, 7, 20), self.country_a)
         before = self.env["account.analytic.line"].search_count(
-            [
-                ("employee_id", "=", self.emp_a.id),
-                ("public_holiday_line_id", "=", line.id),
-            ]
+            Domain("employee_id", "=", self.emp_a.id)
+            & Domain("public_holiday_line_id", "=", line.id)
         )
         self.partner_a.country_id = self.country_b
         after = self.env["account.analytic.line"].search_count(
-            [
-                ("employee_id", "=", self.emp_a.id),
-                ("public_holiday_line_id", "=", line.id),
-            ]
+            Domain("employee_id", "=", self.emp_a.id)
+            & Domain("public_holiday_line_id", "=", line.id)
         )
         self.assertEqual(before, after)
 
@@ -673,10 +632,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         """
         line = self._create_public_holiday_line(date(2026, 8, 3), self.country_a)
         timesheet = self.env["account.analytic.line"].search(
-            [
-                ("employee_id", "=", self.emp_a.id),
-                ("public_holiday_line_id", "=", line.id),
-            ],
+            Domain("employee_id", "=", self.emp_a.id)
+            & Domain("public_holiday_line_id", "=", line.id),
             limit=1,
         )
 
@@ -687,10 +644,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         """Post-init hook must backfill missing future timesheets for existing data."""
         line = self._create_public_holiday_line(date(2026, 8, 4), self.country_a)
         timesheets = self.env["account.analytic.line"].search(
-            [
-                ("employee_id", "=", self.emp_a.id),
-                ("public_holiday_line_id", "=", line.id),
-            ]
+            Domain("employee_id", "=", self.emp_a.id)
+            & Domain("public_holiday_line_id", "=", line.id)
         )
         self.assertTrue(timesheets)
 
@@ -698,10 +653,8 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
         timesheets.unlink()
         self.assertFalse(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )
 
@@ -709,9 +662,7 @@ class TestPublicHolidayTimesheets(common.TransactionCase):
 
         self.assertTrue(
             self.env["account.analytic.line"].search_count(
-                [
-                    ("employee_id", "=", self.emp_a.id),
-                    ("public_holiday_line_id", "=", line.id),
-                ]
+                Domain("employee_id", "=", self.emp_a.id)
+                & Domain("public_holiday_line_id", "=", line.id)
             )
         )

@@ -6,8 +6,8 @@
     "version": "19.0.1.0.0",
     "license": "AGPL-3",
     "category": "Human Resources",
-    "author": "Camptocamp SA, Odoo Community Association (OCA),",
-    "summary": "Manage Timesheets forPublic Holidays",
+    "author": "Camptocamp, Odoo Community Association (OCA),",
+    "summary": "Manage Timesheets for Public Holidays",
     "website": "https://github.com/OCA/hr-holidays",
     "depends": [
         "hr_holidays_public",

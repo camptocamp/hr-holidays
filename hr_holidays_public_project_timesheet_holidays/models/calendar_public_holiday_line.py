@@ -7,6 +7,7 @@ from datetime import datetime, time
 import pytz
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 
 class CalendarPublicHolidayLine(models.Model):
@@ -111,14 +112,14 @@ class CalendarPublicHolidayLine(models.Model):
         leave_days_per_employee = defaultdict(list)
         if not employees:
             return leave_days_per_employee
-
+        domain = (
+            Domain("employee_id", "in", employees.ids)
+            & Domain("state", "=", "validate")
+            & Domain("date_from", "<=", self.date)
+            & Domain("date_to", ">=", self.date)
+        )
         leaves_read_group = self.env["hr.leave"]._read_group(
-            [
-                ("employee_id", "in", employees.ids),
-                ("state", "=", "validate"),
-                ("date_from", "<=", self.date),
-                ("date_to", ">=", self.date),
-            ],
+            domain,
             ["employee_id"],
             ["date_from:array_agg", "date_to:array_agg"],
         )
@@ -132,14 +133,16 @@ class CalendarPublicHolidayLine(models.Model):
         return leave_days_per_employee
 
     def _get_existing_timesheet_employee_ids(self, employees):
+        domain = (
+            Domain("employee_id", "in", employees.ids)
+            & Domain("date", "=", self.date)
+            & (
+                Domain("public_holiday_line_id", "=", self.id)
+                | Domain("global_leave_id", "!=", False)
+            )
+        )
         existing_read_group = self.env["account.analytic.line"]._read_group(
-            [
-                ("employee_id", "in", employees.ids),
-                ("date", "=", self.date),
-                "|",
-                ("public_holiday_line_id", "=", self.id),
-                ("global_leave_id", "!=", False),
-            ],
+            domain,
             ["employee_id"],
             ["__count"],
         )
@@ -209,10 +212,7 @@ class CalendarPublicHolidayLine(models.Model):
     def create(self, vals_list):
         records = super().create(vals_list)
         employees = self.env["hr.employee"].search(
-            [
-                ("active", "=", True),
-                ("address_id", "!=", False),
-            ]
+            Domain("active", "=", True) & Domain("address_id", "!=", False)
         )
         records._generate_public_holiday_timesheets(employees)
         return records
@@ -230,10 +230,8 @@ class CalendarPublicHolidayLine(models.Model):
                 self.env["account.analytic.line"]
                 .sudo()
                 .search(
-                    [
-                        ("public_holiday_line_id", "in", changed_lines.ids),
-                        ("date", ">=", fields.Date.today()),
-                    ]
+                    Domain("public_holiday_line_id", "in", changed_lines.ids)
+                    & Domain("date", ">=", fields.Date.today())
                 )
             )
             old_timesheets.write({"public_holiday_line_id": False})
@@ -243,10 +241,7 @@ class CalendarPublicHolidayLine(models.Model):
 
         if should_regenerate:
             employees = self.env["hr.employee"].search(
-                [
-                    ("active", "=", True),
-                    ("address_id", "!=", False),
-                ]
+                Domain("active", "=", True) & Domain("address_id", "!=", False)
             )
             changed_lines._generate_public_holiday_timesheets(employees)
 
@@ -258,10 +253,8 @@ class CalendarPublicHolidayLine(models.Model):
             self.env["account.analytic.line"]
             .sudo()
             .search(
-                [
-                    ("public_holiday_line_id", "in", self.ids),
-                    ("date", ">=", fields.Date.today()),
-                ]
+                Domain("public_holiday_line_id", "in", self.ids)
+                & Domain("date", ">=", fields.Date.today())
             )
         )
         timesheets.write({"public_holiday_line_id": False})
