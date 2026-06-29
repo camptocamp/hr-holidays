@@ -1,5 +1,4 @@
-# Copyright 2015 2011,2013 Michael Telahun Makonnen <mmakonnen@gmail.com>
-# Copyright 2020 InitOS Gmbh
+# Copyright 2026 Camptocamp (https://www.camptocamp.com)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 {
@@ -14,7 +13,6 @@
         "hr_holidays_public",
         "project_timesheet_holidays",
     ],
-    "data": [],
     "post_init_hook": "post_init_hook",
     "installable": True,
     "auto_install": True,
