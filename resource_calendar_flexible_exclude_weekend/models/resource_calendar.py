@@ -8,8 +8,7 @@ from dateutil.rrule import DAILY, rrule
 from pytz import timezone
 
 from odoo import fields, models
-
-from odoo.addons.hr_work_entry_contract.models.hr_work_intervals import WorkIntervals
+from odoo.tools.intervals import Intervals
 
 _logger = logging.getLogger(__name__)
 
@@ -124,7 +123,9 @@ class ResourceCalendar(models.Model):
                         skipping_start_dt = skipping_end_dt
             # merge both result set
             for resource, intervals in skipping_res.items():
-                res_others[resource] = WorkIntervals(intervals.values())
+                res_others[resource.id if resource else False] = Intervals(
+                    intervals.values(), keep_distinct=True
+                )
         return res_others
 
     def _get_unusual_days(self, start_dt, end_dt, company_id=False):
