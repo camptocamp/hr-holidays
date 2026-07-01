@@ -7,9 +7,8 @@ from datetime import timedelta
 from dateutil.rrule import DAILY, rrule
 from pytz import timezone
 
-from odoo import fields, models
-
-from odoo.addons.hr_work_entry_contract.models.hr_work_intervals import WorkIntervals
+from odoo import Domain, fields, models
+from odoo.tools.intervals import Intervals
 
 _logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class ResourceCalendar(models.Model):
     exclude_weekends = fields.Boolean()
 
     # Override to return weekends as special days if exclude_weekends is set
-    def _attendance_intervals_batch(
+    def _attendance_intervals_batch(  # noqa: C901
         self, start_dt, end_dt, resources=None, domain=None, tz=None, lunch=False
     ):
         """
@@ -33,6 +32,12 @@ class ResourceCalendar(models.Model):
         assert start_dt.tzinfo and end_dt.tzinfo, "Datetimes must be timezone-aware"
         self.ensure_one()
 
+        # shortcut: the method can be called with and end_dt before start_dt,
+        # in this case the expected value is a dictionary with empty intervals.
+        if end_dt < start_dt:
+            return super()._attendance_intervals_batch(
+                start_dt, end_dt, resources, domain, tz, lunch
+            )
         if not resources:
             resources = self.env["resource.resource"]
             resources_list = [resources]
@@ -112,8 +117,8 @@ class ResourceCalendar(models.Model):
                         tz,
                         lunch,
                     )
-                    for resource, work_intervals in res_skip.items():
-                        new_intervals = skipping_res[resource]
+                    for resource_id, work_intervals in res_skip.items():
+                        new_intervals = skipping_res[resource_id]
                         for start, end, attendance in work_intervals:
                             if start.weekday() not in (5, 6):
                                 new_intervals[(start, end)] = (start, end, attendance)
@@ -123,8 +128,10 @@ class ResourceCalendar(models.Model):
                         # go to next monday
                         skipping_start_dt = skipping_end_dt
             # merge both result set
-            for resource, intervals in skipping_res.items():
-                res_others[resource] = WorkIntervals(intervals.values())
+            for resource_id, intervals in skipping_res.items():
+                res_others[resource_id] = Intervals(
+                    intervals.values(), keep_distinct=True
+                )
         return res_others
 
     def _get_unusual_days(self, start_dt, end_dt, company_id=False):
@@ -136,9 +143,9 @@ class ResourceCalendar(models.Model):
                 start_dt = start_dt.replace(tzinfo=utc)
             if not end_dt.tzinfo:
                 end_dt = end_dt.replace(tzinfo=utc)
-            domain = []
+            domain = Domain(True)
             if company_id:
-                domain = [("company_id", "in", (company_id.id, False))]
+                domain = Domain("company_id", "in", (company_id.id, False))
             works = {
                 d[0].date()
                 for d in self._work_intervals_batch(start_dt, end_dt, domain=domain)[

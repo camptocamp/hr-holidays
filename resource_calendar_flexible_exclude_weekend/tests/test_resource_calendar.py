@@ -9,11 +9,12 @@ class TestResourceCalendar(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.calendar_flex_with_weekend = cls.env["resource.calendar"].create(
             {
                 "name": "Flexible Calendar (std implementation)",
                 "hours_per_day": 8.0,
-                "full_time_required_hours": 40.0,
+                "hours_per_week": 40.0,
                 "flexible_hours": True,
                 "exclude_weekends": False,
                 "tz": "UTC",
@@ -23,7 +24,7 @@ class TestResourceCalendar(TransactionCase):
             {
                 "name": "Flexible Calendar (exclude weekends)",
                 "hours_per_day": 8.0,
-                "full_time_required_hours": 40.0,
+                "hours_per_week": 40.0,
                 "flexible_hours": True,
                 "exclude_weekends": True,
                 "tz": "UTC",
@@ -36,8 +37,8 @@ class TestResourceCalendar(TransactionCase):
         result_per_resource_id = calendar._attendance_intervals_batch(start_dt, end_dt)
 
         actual_duration = 0
-        for _res_id, work_intervals in result_per_resource_id.items():
-            for start, end, _ in work_intervals:
+        for _res_id, intervals in result_per_resource_id.items():
+            for start, end, _ in intervals:
                 actual_duration += (end - start).seconds
         self.assertEqual(
             actual_duration / 3600,
