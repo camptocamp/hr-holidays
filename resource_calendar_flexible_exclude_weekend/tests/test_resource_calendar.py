@@ -9,11 +9,12 @@ class TestResourceCalendar(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.calendar_flex_with_weekend = cls.env["resource.calendar"].create(
             {
                 "name": "Flexible Calendar (std implementation)",
                 "hours_per_day": 8.0,
-                "full_time_required_hours": 40.0,
+                "hours_per_week": 40.0,
                 "flexible_hours": True,
                 "exclude_weekends": False,
                 "tz": "UTC",
@@ -23,7 +24,7 @@ class TestResourceCalendar(TransactionCase):
             {
                 "name": "Flexible Calendar (exclude weekends)",
                 "hours_per_day": 8.0,
-                "full_time_required_hours": 40.0,
+                "hours_per_week": 40.0,
                 "flexible_hours": True,
                 "exclude_weekends": True,
                 "tz": "UTC",
@@ -36,8 +37,8 @@ class TestResourceCalendar(TransactionCase):
         result_per_resource_id = calendar._attendance_intervals_batch(start_dt, end_dt)
 
         actual_duration = 0
-        for _res_id, work_intervals in result_per_resource_id.items():
-            for start, end, _ in work_intervals:
+        for _res_id, intervals in result_per_resource_id.items():
+            for start, end, _ in intervals:
                 actual_duration += (end - start).seconds
         self.assertEqual(
             actual_duration / 3600,
@@ -97,6 +98,16 @@ class TestResourceCalendar(TransactionCase):
             40,
             "std behavior: for 7 days, you get full week duration",
         )
+
+    def test_flexible_calendar_end_before_start_returns_empty(self):
+        calendar = self.calendar_flex_without_weekend
+        start_dt = datetime(2025, 11, 10, 0, 0, 0, tzinfo=self.UTC)
+        end_dt = datetime(2025, 11, 9, 0, 0, 0, tzinfo=self.UTC)
+
+        result_per_resource_id = calendar._attendance_intervals_batch(start_dt, end_dt)
+
+        self.assertEqual(len(result_per_resource_id), 1)
+        self.assertEqual(list(result_per_resource_id[False]), [])
 
     def test_flexible_calendar_without_weekend_friday_sunday(self):
         calendar = self.calendar_flex_without_weekend
@@ -200,6 +211,21 @@ class TestResourceCalendar(TransactionCase):
                 self.assertEqual(
                     len(meta), 1, f"more than one attendance for {start}->{end}: {meta}"
                 )
+
+    def test_get_unusual_days_excluding_weekends(self):
+        calendar = self.calendar_flex_without_weekend
+        start_dt = datetime(2025, 11, 3, 0, 0, 0, tzinfo=self.UTC)
+        end_dt = datetime(2025, 11, 9, 0, 0, 0, tzinfo=self.UTC)
+
+        unusual_days = calendar._get_unusual_days(start_dt, end_dt)
+
+        self.assertFalse(unusual_days["2025-11-03"])
+        self.assertFalse(unusual_days["2025-11-04"])
+        self.assertFalse(unusual_days["2025-11-05"])
+        self.assertFalse(unusual_days["2025-11-06"])
+        self.assertFalse(unusual_days["2025-11-07"])
+        self.assertTrue(unusual_days["2025-11-08"])
+        self.assertTrue(unusual_days["2025-11-09"])
 
     def test_daylight_saving_time_1(self):
         calendar = self.calendar_flex_without_weekend
