@@ -2,7 +2,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 {
     "name": "Resource Calendar Flexible Hours Exclude Weekend",
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "category": "Tools",
     "website": "https://github.com/OCA/hr-holidays",
     "author": "Camptocamp SA, Odoo Community Association (OCA)",
