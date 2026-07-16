@@ -51,7 +51,7 @@ Configuration
 Go to *Time Off -> Configuration -> Time Off Types* and open a Leave
 Type
 
-- Check "Exclude Public Holidays" to exclude public holidays.
+-  Check "Exclude Public Holidays" to exclude public holidays.
 
 Usage
 =====
@@ -127,37 +127,38 @@ Authors
 Contributors
 ------------
 
-- Michael Telahun Makonnen <mmakonnen@gmail.com>
-- Fekete Mihai <feketemihai@gmail.com>
-- Nikolina Todorova <nikolina.todorova@initos.com>
-- Alexis de Lattre <alexis.delattre@akretion.com>
-- Salton Massally (iDT Labs) <smassally@idtlabs.sl>
-- Ivan Yelizariev <yelizariev@it-projects.info>
-- Bassirou Ndaw <b.ndaw@ergobit.org>
-- Dhara Solanki <dhara.solanki@initos.com>
-- `Tecnativa <https://www.tecnativa.com>`__:
+-  Michael Telahun Makonnen <mmakonnen@gmail.com>
+-  Fekete Mihai <feketemihai@gmail.com>
+-  Nikolina Todorova <nikolina.todorova@initos.com>
+-  Alexis de Lattre <alexis.delattre@akretion.com>
+-  Salton Massally (iDT Labs) <smassally@idtlabs.sl>
+-  Ivan Yelizariev <yelizariev@it-projects.info>
+-  Bassirou Ndaw <b.ndaw@ergobit.org>
+-  Dhara Solanki <dhara.solanki@initos.com>
+-  `Tecnativa <https://www.tecnativa.com>`__:
 
-  - Pedro M. Baeza
+   -  Pedro M. Baeza
 
-- `CorporateHub <https://corporatehub.eu/>`__
+-  `CorporateHub <https://corporatehub.eu/>`__
 
-  - Alexey Pelykh <alexey.pelykh@corphub.eu>
+   -  Alexey Pelykh <alexey.pelykh@corphub.eu>
 
-- `Camptocamp <https://www.camptocamp.com>`__:
+-  `Camptocamp <https://www.camptocamp.com>`__:
 
-  - Damien Crier <damien.crier@camptocamp.com>
+   -  Damien Crier <damien.crier@camptocamp.com>
+   -  Italo Lopes <italo.lopes@camptocamp.com>
 
-- `Druidoo <https://www.druidoo.io>`__:
+-  `Druidoo <https://www.druidoo.io>`__:
 
-  - Iván Todorovich <ivan.todorovich@gmail.com>
+   -  Iván Todorovich <ivan.todorovich@gmail.com>
 
-- `Pesol <https://www.pesol.es>`__:
+-  `Pesol <https://www.pesol.es>`__:
 
-  - Pedro Evaristo Gonzalez Sanchez <pedro.gonzalez@pesol.es>
+   -  Pedro Evaristo Gonzalez Sanchez <pedro.gonzalez@pesol.es>
 
-- `Trobz <https://trobz.com>`__:
+-  `Trobz <https://trobz.com>`__:
 
-  - Thao Le <thaolt@trobz.com>
+   -  Thao Le <thaolt@trobz.com>
 
 Other credits
 -------------
