@@ -4,6 +4,8 @@
 # Copyright 2020 InitOS Gmbh
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from odoo.tests import new_test_user
+
 from odoo.addons.calendar_public_holiday.tests.test_calendar_public_holiday import (
     TestCalendarPublicHoliday,
 )
@@ -65,6 +67,13 @@ class TestHolidaysComputeDaysBase(TestCalendarPublicHoliday):
                 "address_id": cls.address_2.id,
             }
         )
+        cls.employee_user = new_test_user(
+            cls.env,
+            login="public_holiday_employee",
+            groups="base.group_user",
+            name="Employee 2",
+        )
+        cls.employee_2.user_id = cls.employee_user
         # Use a very old year for avoiding to collapse with current data
         cls.public_holiday_global = cls.holiday_model.create(
             {
@@ -179,3 +188,78 @@ class TestHolidaysComputeDays(TestHolidaysComputeDaysBase):
             }
         )
         self.assertEqual(leave_request.number_of_days, 2)
+
+    def test_number_days_excluding_as_employee_user(self):
+        """Test an employee user excludes holidays using its public work address."""
+        leave_request = self.HrLeave.with_user(self.employee_user).new(
+            {
+                "date_from": "1946-12-23 00:00:00",  # Monday
+                "date_to": "1946-12-29 23:59:59",  # Sunday
+                "holiday_status_id": self.holiday_type.id,
+                "employee_id": self.employee_2.id,
+            }
+        )
+
+        self.assertEqual(leave_request.number_of_days, 2)
+
+
+class TestHolidaysComputeDaysFlexibleSingleDay(TestHolidaysComputeDaysBase):
+    """Regression tests for a flexible employee requesting a single day of
+    leave that falls exactly on a public holiday: core's ``_get_durations``
+    special-cases flexible employees on single-day requests by searching
+    ``resource.calendar.leaves`` directly, bypassing the
+    ``calendar.public.holiday.line`` records this module manages.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.flexible_calendar = cls.env["resource.calendar"].create(
+            {"name": "Flexible Calendar", "flexible_hours": True}
+        )
+        cls.employee_flexible = cls.env["hr.employee"].create(
+            {
+                "name": "Flexible Employee",
+                "resource_calendar_id": cls.flexible_calendar.id,
+                "address_id": cls.address_1.id,
+            }
+        )
+
+    def test_single_day_on_public_holiday_is_excluded(self):
+        leave_request = self.HrLeave.new(
+            {
+                "date_from": "1946-12-25 00:00:00",  # Christmas, global holiday
+                "date_to": "1946-12-25 23:59:59",
+                "request_date_from": "1946-12-25",
+                "request_date_to": "1946-12-25",
+                "holiday_status_id": self.holiday_type.id,
+                "employee_id": self.employee_flexible.id,
+            }
+        )
+        self.assertEqual(leave_request.number_of_days, 0)
+
+    def test_single_day_not_on_public_holiday_is_not_excluded(self):
+        leave_request = self.HrLeave.new(
+            {
+                "date_from": "1946-12-26 00:00:00",
+                "date_to": "1946-12-26 23:59:59",
+                "request_date_from": "1946-12-26",
+                "request_date_to": "1946-12-26",
+                "holiday_status_id": self.holiday_type.id,
+                "employee_id": self.employee_flexible.id,
+            }
+        )
+        self.assertEqual(leave_request.number_of_days, 1)
+
+    def test_single_day_on_public_holiday_not_excluded_when_type_says_so(self):
+        leave_request = self.HrLeave.new(
+            {
+                "date_from": "1946-12-25 00:00:00",
+                "date_to": "1946-12-25 23:59:59",
+                "request_date_from": "1946-12-25",
+                "request_date_to": "1946-12-25",
+                "holiday_status_id": self.holiday_type_no_excludes.id,
+                "employee_id": self.employee_flexible.id,
+            }
+        )
+        self.assertEqual(leave_request.number_of_days, 1)
