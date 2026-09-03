@@ -230,6 +230,8 @@ class TestHolidaysComputeDaysFlexibleSingleDay(TestHolidaysComputeDaysBase):
             {
                 "date_from": "1946-12-25 00:00:00",  # Christmas, global holiday
                 "date_to": "1946-12-25 23:59:59",
+                "request_date_from": "1946-12-25",
+                "request_date_to": "1946-12-25",
                 "holiday_status_id": self.holiday_type.id,
                 "employee_id": self.employee_flexible.id,
             }
@@ -241,6 +243,8 @@ class TestHolidaysComputeDaysFlexibleSingleDay(TestHolidaysComputeDaysBase):
             {
                 "date_from": "1946-12-26 00:00:00",
                 "date_to": "1946-12-26 23:59:59",
+                "request_date_from": "1946-12-26",
+                "request_date_to": "1946-12-26",
                 "holiday_status_id": self.holiday_type.id,
                 "employee_id": self.employee_flexible.id,
             }
@@ -252,6 +256,8 @@ class TestHolidaysComputeDaysFlexibleSingleDay(TestHolidaysComputeDaysBase):
             {
                 "date_from": "1946-12-25 00:00:00",
                 "date_to": "1946-12-25 23:59:59",
+                "request_date_from": "1946-12-25",
+                "request_date_to": "1946-12-25",
                 "holiday_status_id": self.holiday_type_no_excludes.id,
                 "employee_id": self.employee_flexible.id,
             }
